@@ -3,18 +3,22 @@
 http://123.145.15.144:8003/udp/225.0.4.59:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆新闻
 http://123.145.15.144:8003/udp/225.0.4.188:7980
+#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆新农村
+http://123.145.15.144:8003/udp/225.0.4.70:7980
+#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆新农村
+http://123.145.15.144:8003/udp/225.0.4.189:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆社会与法
 http://123.145.15.144:8003/udp/225.0.4.64:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆社会与法
 http://123.145.15.144:8003/udp/225.0.4.190:7980
-#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆影视剧
-http://123.145.15.144:8003/udp/225.0.4.62:7980
-#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆影视剧
-http://123.145.15.144:8003/udp/225.0.4.192:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆少儿
 http://123.145.15.144:8003/udp/225.0.4.71:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆少儿
 http://123.145.15.144:8003/udp/225.0.4.191:7980
+#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆影视剧
+http://123.145.15.144:8003/udp/225.0.4.62:7980
+#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆影视剧
+http://123.145.15.144:8003/udp/225.0.4.192:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆红叶
 http://123.145.15.144:8003/udp/225.0.4.63:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆红叶
@@ -31,10 +35,6 @@ http://123.145.15.144:8003/udp/225.0.4.195:7980
 http://123.145.15.144:8003/udp/225.0.4.69:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆红岩文化
 http://123.145.15.144:8003/udp/225.0.4.196:7980
-#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆新农村
-http://123.145.15.144:8003/udp/225.0.4.70:7980
-#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆新农村
-http://123.145.15.144:8003/udp/225.0.4.189:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆移动
 http://123.145.15.144:8003/udp/225.0.4.68:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆移动
