@@ -89,8 +89,8 @@ if unique_ips_ports:
         print(f"找到可访问的视频流服务: {valid_ip}")
         # 定义需要更新的文件列表
         files_to_update = [
-            {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/wokaotianshi123/zubotv/main/sichuan/sichuanzubo.txt', 'filename': 'sichuanzubo.txt'},
-            {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/wokaotianshi123/zubotv/main/sichuan/sichuanzubo.m3u', 'filename': 'sichuanzubo.m3u'}
+            {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/sichuan/SCTV.txt', 'filename': 'SCTV.txt'},
+            {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/sichuan/SCTV.m3u', 'filename': 'SCTV.m3u'}
         ]
 
         # 更新文件中的IP地址和端口号
@@ -99,5 +99,6 @@ if unique_ips_ports:
         print("没有找到可访问的视频流服务。")
 else:
     print("没有提取到IP地址和端口号。")
+
 
 
