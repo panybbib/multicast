@@ -23,6 +23,10 @@ http://123.145.15.144:8003/udp/225.0.4.193:7980
 http://123.145.15.144:8003/udp/225.0.4.65:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆文体娱乐
 http://123.145.15.144:8003/udp/225.0.4.194:7980
+#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆汽摩
+http://123.145.15.144:8003/udp/225.0.4.61:7980
+#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆汽摩
+http://123.145.15.144:8003/udp/225.0.4.195:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆红岩文化
 http://123.145.15.144:8003/udp/225.0.4.69:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆红岩文化
@@ -35,10 +39,6 @@ http://123.145.15.144:8003/udp/225.0.4.189:7980
 http://123.145.15.144:8003/udp/225.0.4.68:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆移动
 http://123.145.15.144:8003/udp/225.0.4.215:7980
-#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆汽摩
-http://123.145.15.144:8003/udp/225.0.4.61:7980
-#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",重庆汽摩
-http://123.145.15.144:8003/udp/225.0.4.195:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",时尚购物
 http://123.145.15.144:8003/udp/225.0.4.198:7980
 #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="本地频道",爱生活
