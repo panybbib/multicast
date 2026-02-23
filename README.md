@@ -1,2 +1,2 @@
-# zubotv
-自动更新zuboip
+# multicast
+自动更新ip
