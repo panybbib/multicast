@@ -1,4 +1,4 @@
-name: genngxinzubo
+name: update
 
 on:
   # push:
@@ -41,15 +41,11 @@ jobs:
           pip install opencv-python  # 根据需要安装opencv-python
           pip install requests      # 安装requests库
 
-      - name: Run gengxinsichuanip
-        run: python ${{ github.workspace }}/gengxinsichuanip.py
+      - name: Run updatechongqingip
+        run: python ${{ github.workspace }}/updatechongqingip.py
 
-      - name: Run gengxinchongqingip
-        run: python ${{ github.workspace }}/gengxinchongqingip.py
-
-      # 根据需要取消注释以下行
-      - name: Run gengxinhunanip
-        run: python ${{ github.workspace }}/gengxinhunanip.py
+      - name: Run updatesichuanip
+        run: python ${{ github.workspace }}/updatesichuanip.py
 
       - name: Commit results
         run: |
