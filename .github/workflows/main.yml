@@ -44,9 +44,6 @@ jobs:
       - name: Run updatechongqingip
         run: python ${{ github.workspace }}/updatechongqingip.py
 
-      - name: Run updatechongqingip2
-        run: python ${{ github.workspace }}/updatechongqingip2.py
-
       - name: Run updatesichuanip
         run: python ${{ github.workspace }}/updatesichuanip.py
 
