@@ -172,7 +172,7 @@ valid_servers = []
 for ip in ips:
     if check_video_stream_connectivity(ip):
         valid_servers.append(ip)
-    if len(valid_servers) >= 6:
+    if len(valid_servers) >= 5:
         break
 
 if len(valid_servers) < 2:
@@ -221,3 +221,4 @@ update_files(primary, files_group_1)
 update_files(secondary, files_group_2)
 
 print("\n完成")
+
