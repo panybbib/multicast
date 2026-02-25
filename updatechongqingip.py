@@ -1,105 +1,142 @@
 import requests
 import re
-import cv2  # 导入OpenCV库
+import time
+import cv2
 
-# 定义fofa链接
+# FOFA 查询地址
 fofa_url = 'https://fofa.info/result?qbase64=c2VydmVyPSJ1ZHB4eSIgJiYgY2l0eT0iQ2hvbmdxaW5nIiAmJiBvcmchPSJDaGluYW5ldCIgJiYgb3JnIT0iQ2hpbmEgVGVsZWNvbSI=&filter_type=last_month'
 # fofa_url = 'https://fofa.info/result?qbase64=InVkcHh5IiAmJiBjaXR5PSJDaG9uZ3Fpbmci'
 
-# 尝试从fofa链接提取IP地址和端口号，并去除重复项
-def extract_unique_ip_ports(fofa_url):
-    try:
-        response = requests.get(fofa_url)
-        html_content = response.text
-        # 使用正则表达式匹配IP地址和端口号
-        ips_ports = re.findall(r'(\d+\.\d+\.\d+\.\d+:\d+)', html_content)
-        unique_ips_ports = list(set(ips_ports))  # 去除重复的IP地址和端口号
-        return unique_ips_ports if unique_ips_ports else None
-    except requests.RequestException as e:
-        print(f"请求错误: {e}")
-        return None
-
-# 检查视频流的可达性
-def check_video_stream_connectivity(ip_port, urls_udp):
-    try:
-        # 构造完整的视频URL
-        video_url = f"http://{ip_port}{urls_udp}"
-        # 用OpenCV读取视频
-        cap = cv2.VideoCapture(video_url)
-        
-        # 检查视频是否成功打开
-        if not cap.isOpened():
-            print(f"视频URL {video_url} 无效")
-            return None
-        else:
-            # 读取视频的宽度和高度
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            print(f"视频URL {video_url} 的分辨率为 {width}x{height}")
-            # 检查分辨率是否大于0
-            if width > 0 and height > 0:
-                return ip_port  # 返回有效的IP和端口
-            # 关闭视频流
-            cap.release()
-    except Exception as e:
-        print(f"访问 {ip_port} 失败: {e}")
-    return None
-
-# 更新文件中的IP地址和端口号
-def update_files(accessible_ip_port, files_to_update):
-    for file_info in files_to_update:
-        try:
-            # 读取原始文件内容
-            response = requests.get(file_info['url'])
-            file_content = response.text
-
-            # 替换文件中的IP地址和端口号
-            # 假设文件中的IP地址和端口号格式为 http://IP:PORT
-            ip_port_pattern = r'(http://\d+\.\d+\.\d+\.\d+:\d+)'
-            updated_content = re.sub(ip_port_pattern, f'http://{accessible_ip_port}', file_content)
-
-            # 保存更新后的内容到新文件
-            with open(file_info['filename'], 'w', encoding='utf-8') as file:
-                file.write(updated_content)
-
-            print(f"文件 {file_info['filename']} 已更新并保存。")
-        except requests.RequestException as e:
-            print(f"无法更新文件 {file_info['filename']}，错误: {e}")
-
-# 定义组播地址和端口
+# 组播地址
 urls_udp = "/udp/225.0.4.188:7980"
 
-# 提取唯一的IP地址和端口号
+# 提取IP:PORT
+def extract_unique_ip_ports(fofa_url):
+    try:
+        response = requests.get(fofa_url, timeout=10)
+        ips_ports = re.findall(r'(\d+\.\d+\.\d+\.\d+:\d+)', response.text)
+        return list(set(ips_ports))
+    except requests.RequestException as e:
+        print(f"请求错误: {e}")
+        return []
+
+
+# 基础连通性检测
+def check_video_stream_connectivity(ip_port):
+    try:
+        video_url = f"http://{ip_port}{urls_udp}"
+        cap = cv2.VideoCapture(video_url)
+
+        if not cap.isOpened():
+            return False
+
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        cap.release()
+
+        return width > 0 and height > 0
+    except:
+        return False
+
+
+# 视频流测速函数
+def measure_stream_speed(ip_port, test_duration=5):
+    video_url = f"http://{ip_port}{urls_udp}"
+    print(f"测速中: {video_url}")
+
+    try:
+        start_time = time.time()
+        bytes_received = 0
+
+        with requests.get(video_url, stream=True, timeout=10) as r:
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    bytes_received += len(chunk)
+
+                if time.time() - start_time > test_duration:
+                    break
+
+        elapsed = time.time() - start_time
+        mbps = (bytes_received * 8) / elapsed / 1024 / 1024
+        print(f"{ip_port} 速度: {mbps:.2f} Mbps")
+
+        return mbps
+
+    except Exception as e:
+        print(f"{ip_port} 测速失败: {e}")
+        return 0
+
+
+# 更新文件
+def update_files(best_ip_port, files_to_update):
+    for file_info in files_to_update:
+        try:
+            response = requests.get(file_info['url'], timeout=10)
+            file_content = response.text
+
+            ip_port_pattern = r'(http://\d+\.\d+\.\d+\.\d+:\d+)'
+            updated_content = re.sub(
+                ip_port_pattern,
+                f'http://{best_ip_port}',
+                file_content
+            )
+
+            with open(file_info['filename'], 'w', encoding='utf-8') as f:
+                f.write(updated_content)
+
+            print(f"{file_info['filename']} 更新完成")
+
+        except Exception as e:
+            print(f"更新失败: {e}")
+
+
+# 主程序
 unique_ips_ports = extract_unique_ip_ports(fofa_url)
 
-if unique_ips_ports:
-    print("提取到的唯一IP地址和端口号：")
-    for ip_port in unique_ips_ports:
-        print(ip_port)
-    
-    # 测试每个IP地址和端口号，直到找到一个可访问的视频流
-    valid_ip = None
-    for ip_port in unique_ips_ports:
-        valid_ip = check_video_stream_connectivity(ip_port, urls_udp)
-        if valid_ip:
-            break  # 找到有效的IP后，不再继续循环
+if not unique_ips_ports:
+    print("未找到IP")
+    exit()
 
-    if valid_ip:
-        print(f"找到可访问的视频流服务: {valid_ip}")
-        # 定义需要更新的文件列表
-        files_to_update = [
-            {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV.txt', 'filename': 'CQTV.txt'},
-            {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV.m3u', 'filename': 'CQTV.m3u'}
-        ]
+print(f"共提取 {len(unique_ips_ports)} 个IP")
 
-        # 更新文件中的IP地址和端口号
-        update_files(valid_ip, files_to_update)
-    else:
-        print("没有找到可访问的视频流服务。")
-else:
-    print("没有提取到IP地址和端口号。")
+# Step 1: 找到3个可用代理
+valid_servers = []
 
+for ip_port in unique_ips_ports:
+    print(f"检测: {ip_port}")
+    if check_video_stream_connectivity(ip_port):
+        print(f"可用: {ip_port}")
+        valid_servers.append(ip_port)
 
+        if len(valid_servers) >= 3:
+            break
 
+if len(valid_servers) < 3:
+    print("可用代理不足3个")
+    exit()
 
+print("\n开始测速...")
 
+# Step 2: 测速
+speed_results = {}
+
+for server in valid_servers:
+    speed = measure_stream_speed(server)
+    speed_results[server] = speed
+
+# Step 3: 选择最快的
+best_server = max(speed_results, key=speed_results.get)
+
+print("\n测速结果:")
+for server, speed in speed_results.items():
+    print(f"{server} -> {speed:.2f} Mbps")
+
+print(f"\n最快服务器: {best_server}")
+
+# Step 4: 更新文件
+files_to_update = [
+    {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV.txt', 'filename': 'CQTV.txt'},
+    {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV.m3u', 'filename': 'CQTV.m3u'}
+]
+
+update_files(best_server, files_to_update)
