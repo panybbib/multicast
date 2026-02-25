@@ -40,7 +40,7 @@ def check_video_stream_connectivity(ip_port):
 
 
 # 视频流测速函数
-def measure_stream_speed(ip_port, test_duration=5):
+def measure_stream_speed(ip_port, test_duration=8):
     video_url = f"http://{ip_port}{urls_udp}"
     print(f"测速中: {video_url}")
 
@@ -140,4 +140,5 @@ files_to_update = [
 ]
 
 update_files(best_server, files_to_update)
+
 
