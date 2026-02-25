@@ -99,7 +99,7 @@ if not unique_ips_ports:
 
 print(f"共提取 {len(unique_ips_ports)} 个IP")
 
-# Step 1: 找到3个可用代理
+# Step 1: 找到5个可用代理
 valid_servers = []
 
 for ip_port in unique_ips_ports:
@@ -108,11 +108,11 @@ for ip_port in unique_ips_ports:
         print(f"可用: {ip_port}")
         valid_servers.append(ip_port)
 
-        if len(valid_servers) >= 3:
+        if len(valid_servers) >= 5:
             break
 
-if len(valid_servers) < 3:
-    print("可用代理不足3个")
+if len(valid_servers) < 5:
+    print("可用代理不足5个")
     exit()
 
 print("\n开始测速...")
@@ -140,3 +140,4 @@ files_to_update = [
 ]
 
 update_files(best_server, files_to_update)
+
