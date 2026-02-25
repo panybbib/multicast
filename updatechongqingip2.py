@@ -88,7 +88,7 @@ if unique_ips_ports:
         print(f"找到可访问的视频流服务: {valid_ip}")
         # 定义需要更新的文件列表
         files_to_update = [
-            {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV2.txt', 'filename': 'CQTV2.txt'},
+            {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV2.txt', 'filename': 'CQTV2.txt'}
         ]
 
         # 更新文件中的IP地址和端口号
