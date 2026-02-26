@@ -175,9 +175,9 @@ for ip in ips:
     if len(valid_servers) >= 5:
         break
 
-if len(valid_servers) < 2:
-    print("可用节点不足")
-    exit()
+# if len(valid_servers) < 2:
+#    print("可用节点不足")
+#    exit()
 
 results = {}
 
@@ -221,5 +221,6 @@ update_files(primary, files_group_1)
 update_files(secondary, files_group_2)
 
 print("\n完成")
+
 
 
