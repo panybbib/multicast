@@ -123,9 +123,9 @@ def compute_scores(results):
             norm_latency = 0
 
         score = (
-            0.65 * norm_tp +
-            0.25 * (1 - norm_latency) +
-            0.10 * (1 - r["loss"])
+            0.7 * norm_tp +
+            0.2 * (1 - norm_latency) +
+            0.1 * (1 - r["loss"])
         )
 
         scores[ip] = score
@@ -221,6 +221,7 @@ update_files(primary, files_group_1)
 update_files(secondary, files_group_2)
 
 print("\n完成")
+
 
 
 
