@@ -3,7 +3,7 @@ name: ip update
 on:
   # push:
   schedule:
-    - cron: '0 2,7,12,21 * * *'
+    - cron: '0 4,10,21 * * *'
   workflow_dispatch:
 
 jobs:
