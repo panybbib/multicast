@@ -4,97 +4,48 @@ import time
 import cv2
 import json
 import os
-import base64
 
-FMB = "cGFuLjEwN0AxNjMuY29t"
-FKB = "NjgyODE2NmEzZjRmYjdlYTQ2ZDkyOTQ0NjdmNDQ1YmU="
-FQUERY = 'server="udpXy" && city="Chongqing" && org!="Chinanet" && org!="China Telecom"'
+fofa_url = 'https://fofa.info/result?qbase64=c2VydmVyPSJ1ZHB4eSIgJiYgY2l0eT0iQ2hvbmdxaW5nIiAmJiBvcmchPSJDaGluYW5ldCIgJiYgb3JnIT0iQ2hpbmEgVGVsZWNvbSI=&filter_type=last_month'
 urls_udp = "/udp/225.0.4.188:7980"
 
-# ================= 查询 =================
+BACKUP_FILE = "backup.json"
 
-def fetch_fofa_results(query, size=100):
+# ---------------- 基础函数 ----------------
+
+def extract_unique_ip_ports(url):
     try:
-        email = base64.b64decode(FMB).decode()
-        key = base64.b64decode(FKB).decode()
-    except Exception as e:
-        print("凭证失败:", e)
+        r = requests.get(url, timeout=10)
+        ips_ports = re.findall(r'(\d+\.\d+\.\d+\.\d+:\d+)', r.text)
+        return list(set(ips_ports))
+    except:
         return []
-
-    qbase64 = base64.b64encode(query.encode()).decode()
-    url = "https://fofa.info/api/v1/search/all"
-
-    params = {
-        "email": email,
-        "key": key,
-        "qbase64": qbase64,
-        "fields": "ip,port",
-        "size": size
-    }
-
-    try:
-        r = requests.get(url, params=params, timeout=15)
-
-        if r.status_code != 200:
-            print("HTTP错误:", r.status_code)
-            print(r.text[:200])
-            return []
-
-        try:
-            data = r.json()
-        except Exception:
-            print("返回内容不是JSON:", r.text[:200])
-            return []
-
-        if data.get("error"):
-            print("错误:", data.get("errmsg", data.get("error")))
-            return []
-
-        results = data.get("results")
-        if not results:
-            print("无结果或额度不足")
-            return []
-
-        ip_ports = []
-        for item in results:
-            if len(item) >= 2:
-                ip_ports.append(f"{item[0]}:{item[1]}")
-
-        print(f"获取到 {len(ip_ports)} 条结果")
-        return list(set(ip_ports))
-
-    except requests.RequestException as e:
-        print("请求异常:", e)
-        return []
-    except Exception as e:
-        print("未知错误:", e)
-        return []
-
-# ================= 视频连通性检测 =================
 
 def check_video_stream_connectivity(ip_port):
     try:
         video_url = f"http://{ip_port}{urls_udp}"
         cap = cv2.VideoCapture(video_url)
-
         if not cap.isOpened():
             return False
-
-        ret, frame = cap.read()
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         cap.release()
-
-        return ret and frame is not None
-
-    except Exception:
+        return width > 0 and height > 0
+    except:
         return False
 
-# ================= 综合测速 =================
+# ---------------- 综合测速 ----------------
 
 def measure_stream_quality(ip_port, test_duration=5, stall_threshold=0.8):
+    """
+    返回：
+    {
+        throughput_mbps,
+        ttfb_ms,
+        loss_ratio
+    }
+    """
     video_url = f"http://{ip_port}{urls_udp}"
     print(f"\n测试: {ip_port}")
-
-    ttfb_ms = 0
 
     try:
         start_req = time.time()
@@ -105,11 +56,6 @@ def measure_stream_quality(ip_port, test_duration=5, stall_threshold=0.8):
         last_chunk_time = None
 
         with requests.get(video_url, stream=True, timeout=10) as r:
-
-            if r.status_code != 200:
-                print("HTTP异常:", r.status_code)
-                return None
-
             for chunk in r.iter_content(chunk_size=8192):
                 now = time.time()
 
@@ -117,8 +63,9 @@ def measure_stream_quality(ip_port, test_duration=5, stall_threshold=0.8):
                     first_byte_time = now
                     ttfb_ms = (first_byte_time - start_req) * 1000
 
-                if last_chunk_time and now - last_chunk_time > stall_threshold:
-                    stall_count += 1
+                if last_chunk_time is not None:
+                    if now - last_chunk_time > stall_threshold:
+                        stall_count += 1
 
                 last_chunk_time = now
 
@@ -130,12 +77,12 @@ def measure_stream_quality(ip_port, test_duration=5, stall_threshold=0.8):
                     break
 
         elapsed = time.time() - start_req
-
-        if elapsed <= 0:
-            return None
-
         throughput = (bytes_received * 8) / elapsed / 1024 / 1024
-        loss_ratio = stall_count / chunk_count if chunk_count else 1
+
+        if chunk_count == 0:
+            loss_ratio = 1
+        else:
+            loss_ratio = stall_count / chunk_count
 
         print(f"带宽: {throughput:.2f} Mbps | TTFB: {ttfb_ms:.0f} ms | 丢包率估算: {loss_ratio:.2%}")
 
@@ -145,54 +92,92 @@ def measure_stream_quality(ip_port, test_duration=5, stall_threshold=0.8):
             "loss": loss_ratio
         }
 
-    except requests.RequestException:
-        return None
     except Exception as e:
-        print("测速异常:", e)
+        print(f"失败: {e}")
         return None
 
-# ================= 评分 =================
+# ---------------- 评分 ----------------
 
 def compute_scores(results):
-    if not results:
-        return {}
-
     throughputs = [r["throughput"] for r in results.values()]
     ttfbs = [r["ttfb"] for r in results.values()]
 
-    if not throughputs or not ttfbs:
-        return {}
+    min_t = min(throughputs)
+    max_t = max(throughputs)
 
-    min_t, max_t = min(throughputs), max(throughputs)
-    min_l, max_l = min(ttfbs), max(ttfbs)
+    min_l = min(ttfbs)
+    max_l = max(ttfbs)
 
     scores = {}
 
     for ip, r in results.items():
-        norm_tp = (r["throughput"] - min_t) / (max_t - min_t) if max_t != min_t else 1
-        norm_latency = (r["ttfb"] - min_l) / (max_l - min_l) if max_l != min_l else 0
+        # 归一化
+        if max_t != min_t:
+            norm_tp = (r["throughput"] - min_t) / (max_t - min_t)
+        else:
+            norm_tp = 1
 
-        score = 0.7 * norm_tp + 0.2 * (1 - norm_latency) + 0.1 * (1 - r["loss"])
+        if max_l != min_l:
+            norm_latency = (r["ttfb"] - min_l) / (max_l - min_l)
+        else:
+            norm_latency = 0
+
+        score = (
+            0.7 * norm_tp +
+            0.2 * (1 - norm_latency) +
+            0.1 * (1 - r["loss"])
+        )
+
         scores[ip] = score
 
     return scores
 
+# ---------------- 备份机制 ----------------
+
+def load_backup():
+    if os.path.exists(BACKUP_FILE):
+        with open(BACKUP_FILE, "r") as f:
+            return json.load(f)
+    return None
+
+def save_backup(primary, secondary):
+    with open(BACKUP_FILE, "w") as f:
+        json.dump({
+            "primary": primary,
+            "secondary": secondary
+        }, f)
+
+# ---------------- 文件更新 ----------------
+
+def update_files(target_ip_port, files):
+    for file_info in files:
+        try:
+            r = requests.get(file_info['url'], timeout=10)
+            content = re.sub(
+                r'(http://\d+\.\d+\.\d+\.\d+:\d+)',
+                f'http://{target_ip_port}',
+                r.text
+            )
+            with open(file_info['filename'], 'w', encoding='utf-8') as f:
+                f.write(content)
+            print(f"{file_info['filename']} 更新 -> {target_ip_port}")
+        except Exception as e:
+            print(f"更新失败: {e}")
+
 # ---------------- 主程序 ----------------
 
-print("正在查询 ...")
-ips = fetch_fofa_results(FQUERY, size=100)
-
-if not ips:
-    print("未获取到IP")
-    exit()
-
+ips = extract_unique_ip_ports(fofa_url)
 valid_servers = []
 
 for ip in ips:
     if check_video_stream_connectivity(ip):
         valid_servers.append(ip)
-    if len(valid_servers) >= 9:
+    if len(valid_servers) >= 6:
         break
+
+# if len(valid_servers) < 2:
+#    print("可用节点不足")
+#    exit()
 
 results = {}
 
@@ -218,6 +203,21 @@ for ip, score in sorted_servers:
 print(f"\n主节点: {primary}")
 print(f"备用节点: {secondary}")
 
+# 保存备份
+save_backup(primary, secondary)
+
+# 更新文件
+files_group_1 = [
+    {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV.txt', 'filename': 'CQTV.txt'},
+    {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV.m3u', 'filename': 'CQTV.m3u'}
+]
+
+files_group_2 = [
+    {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV.txt', 'filename': 'CQTV2.txt'},
+    {'url': 'https://gitjs.tianshideyou.eu.org/https://raw.githubusercontent.com/panybbib/multicast/main/chongqing/CQTV.m3u', 'filename': 'CQTV2.m3u'}
+]
+
+update_files(primary, files_group_1)
+update_files(secondary, files_group_2)
+
 print("\n完成")
-
-
