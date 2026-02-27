@@ -11,7 +11,7 @@ FKB = "NjgyODE2NmEzZjRmYjdlYTQ2ZDkyOTQ0NjdmNDQ1YmU="
 FQUERY = 'server="udpXy" && city="Chongqing" && org!="Chinanet" && org!="China Telecom"'
 urls_udp = "/udp/225.0.4.188:7980"
 
-# ================= FOFA 查询 =================
+# ================= 查询 =================
 
 def fetch_fofa_results(query, size=100):
     try:
@@ -47,7 +47,7 @@ def fetch_fofa_results(query, size=100):
             return []
 
         if data.get("error"):
-            print("FOFA错误:", data.get("errmsg", data.get("error")))
+            print("错误:", data.get("errmsg", data.get("error")))
             return []
 
         results = data.get("results")
@@ -179,7 +179,7 @@ def compute_scores(results):
 
 # ---------------- 主程序 ----------------
 
-print("正在查询 FOFA...")
+print("正在查询 ...")
 ips = fetch_fofa_results(FQUERY, size=100)
 
 if not ips:
@@ -219,4 +219,5 @@ print(f"\n主节点: {primary}")
 print(f"备用节点: {secondary}")
 
 print("\n完成")
+
 
