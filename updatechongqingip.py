@@ -6,28 +6,27 @@ import json
 import os
 import base64
 
-# 参数
 FMB = "cGFuLjEwN0AxNjMuY29t"
 FKB = "NjgyODE2NmEzZjRmYjdlYTQ2ZDkyOTQ0NjdmNDQ1YmU="
 FQUERY = 'server="udpXy" && city="Chongqing" && org!="Chinanet" && org!="China Telecom"'
-
-# UDP路径
 urls_udp = "/udp/225.0.4.188:7980"
 
-BACKUP_FILE = "backup.json"
-
-# ---------------- 查询 ----------------
+# ================= FOFA 查询 =================
 
 def fetch_fofa_results(query, size=100):
-    FMA = base64.b64decode(FMB).decode()
-    FKA = base64.b64decode(FKB).decode()
+    try:
+        email = base64.b64decode(FMB).decode()
+        key = base64.b64decode(FKB).decode()
+    except Exception as e:
+        print("凭证失败:", e)
+        return []
+
     qbase64 = base64.b64encode(query.encode()).decode()
-    
     url = "https://fofa.info/api/v1/search/all"
 
     params = {
-        "email": FMA,
-        "key": FKA,
+        "email": email,
+        "key": key,
         "qbase64": qbase64,
         "fields": "ip,port",
         "size": size
@@ -35,48 +34,67 @@ def fetch_fofa_results(query, size=100):
 
     try:
         r = requests.get(url, params=params, timeout=15)
-        data = r.json()
 
-        if data.get("error"):
-            print("FOFA错误:", data["error"])
+        if r.status_code != 200:
+            print("HTTP错误:", r.status_code)
+            print(r.text[:200])
             return []
 
-        if not data.get("results"):
+        try:
+            data = r.json()
+        except Exception:
+            print("返回内容不是JSON:", r.text[:200])
+            return []
+
+        if data.get("error"):
+            print("FOFA错误:", data.get("errmsg", data.get("error")))
+            return []
+
+        results = data.get("results")
+        if not results:
             print("无结果或额度不足")
             return []
 
         ip_ports = []
-        for item in data["results"]:
-            ip = item[0]
-            port = item[1]
-            ip_ports.append(f"{ip}:{port}")
+        for item in results:
+            if len(item) >= 2:
+                ip_ports.append(f"{item[0]}:{item[1]}")
 
+        print(f"获取到 {len(ip_ports)} 条结果")
         return list(set(ip_ports))
 
+    except requests.RequestException as e:
+        print("请求异常:", e)
+        return []
     except Exception as e:
-        print("FOFA 查询失败:", e)
+        print("未知错误:", e)
         return []
 
-# ---------------- 视频连通性检测 ----------------
+# ================= 视频连通性检测 =================
 
 def check_video_stream_connectivity(ip_port):
     try:
         video_url = f"http://{ip_port}{urls_udp}"
         cap = cv2.VideoCapture(video_url)
+
         if not cap.isOpened():
             return False
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        ret, frame = cap.read()
         cap.release()
-        return width > 0 and height > 0
-    except:
+
+        return ret and frame is not None
+
+    except Exception:
         return False
 
-# ---------------- 综合测速 ----------------
+# ================= 综合测速 =================
 
 def measure_stream_quality(ip_port, test_duration=5, stall_threshold=0.8):
     video_url = f"http://{ip_port}{urls_udp}"
     print(f"\n测试: {ip_port}")
+
+    ttfb_ms = 0
 
     try:
         start_req = time.time()
@@ -87,6 +105,11 @@ def measure_stream_quality(ip_port, test_duration=5, stall_threshold=0.8):
         last_chunk_time = None
 
         with requests.get(video_url, stream=True, timeout=10) as r:
+
+            if r.status_code != 200:
+                print("HTTP异常:", r.status_code)
+                return None
+
             for chunk in r.iter_content(chunk_size=8192):
                 now = time.time()
 
@@ -107,8 +130,11 @@ def measure_stream_quality(ip_port, test_duration=5, stall_threshold=0.8):
                     break
 
         elapsed = time.time() - start_req
-        throughput = (bytes_received * 8) / elapsed / 1024 / 1024
 
+        if elapsed <= 0:
+            return None
+
+        throughput = (bytes_received * 8) / elapsed / 1024 / 1024
         loss_ratio = stall_count / chunk_count if chunk_count else 1
 
         print(f"带宽: {throughput:.2f} Mbps | TTFB: {ttfb_ms:.0f} ms | 丢包率估算: {loss_ratio:.2%}")
@@ -119,15 +145,23 @@ def measure_stream_quality(ip_port, test_duration=5, stall_threshold=0.8):
             "loss": loss_ratio
         }
 
+    except requests.RequestException:
+        return None
     except Exception as e:
-        print(f"失败: {e}")
+        print("测速异常:", e)
         return None
 
-# ---------------- 评分 ----------------
+# ================= 评分 =================
 
 def compute_scores(results):
+    if not results:
+        return {}
+
     throughputs = [r["throughput"] for r in results.values()]
     ttfbs = [r["ttfb"] for r in results.values()]
+
+    if not throughputs or not ttfbs:
+        return {}
 
     min_t, max_t = min(throughputs), max(throughputs)
     min_l, max_l = min(ttfbs), max(ttfbs)
@@ -185,3 +219,4 @@ print(f"\n主节点: {primary}")
 print(f"备用节点: {secondary}")
 
 print("\n完成")
+
